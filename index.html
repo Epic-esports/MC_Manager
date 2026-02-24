@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minecraft Server Manager - Login</title>
+
+  <!-- Optional: Google Font (safe fallback if blocked) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#070A0B;
+      --panel: rgba(18, 20, 23, 0.72);
+      --panelSolid:#111317;
+      --border: rgba(255,255,255,0.08);
+      --borderStrong: rgba(255,255,255,0.14);
+      --text:#EAF7F1;
+      --muted: rgba(234,247,241,0.72);
+      --muted2: rgba(234,247,241,0.55);
+      --green:#00FF9C;
+      --cyan:#00CCFF;
+      --warn:#FF4D4D;
+      --shadow: 0 24px 80px rgba(0,0,0,.60);
+      --ring: 0 0 0 4px rgba(0,255,156,0.18);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html, body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 15% 10%, rgba(0,255,156,0.14), transparent 60%),
+        radial-gradient(800px 500px at 85% 30%, rgba(0,204,255,0.10), transparent 65%),
+        radial-gradient(900px 700px at 50% 120%, rgba(0,255,156,0.08), transparent 60%),
+        linear-gradient(180deg, #050708 0%, #070A0B 50%, #050708 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    /* Subtle animated grid */
+    .grid{
+      position:fixed;
+      inset:-2px;
+      background:
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 56px 56px;
+      opacity: 0.10;
+      mask-image: radial-gradient(60% 50% at 50% 35%, black 40%, transparent 70%);
+      pointer-events:none;
+      transform: translateZ(0);
+      animation: gridDrift 12s linear infinite;
+    }
+
+    @keyframes gridDrift{
+      from{ transform: translate3d(0,0,0); }
+      to{ transform: translate3d(-56px,-56px,0); }
+    }
+
+    /* Floating blobs */
+    .blob{
+      position:fixed;
+      width: 520px;
+      height: 520px;
+      border-radius: 999px;
+      filter: blur(60px);
+      opacity: .28;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      transform: translateZ(0);
+      animation: floaty 10s ease-in-out infinite;
+    }
+    .blob.a{ left:-160px; top:-160px; background: radial-gradient(circle at 30% 30%, rgba(0,255,156,0.95), transparent 60%); }
+    .blob.b{ right:-220px; top:120px; background: radial-gradient(circle at 30% 30%, rgba(0,204,255,0.95), transparent 60%); animation-delay: -2s; }
+    .blob.c{ left:20%; bottom:-260px; background: radial-gradient(circle at 30% 30%, rgba(0,255,156,0.55), transparent 60%); animation-delay: -4s; }
+
+    @keyframes floaty{
+      0%, 100%{ transform: translate3d(0,0,0) scale(1); }
+      50%{ transform: translate3d(0, 24px, 0) scale(1.03); }
+    }
+
+    .wrap{
+      width: min(980px, 92vw);
+      display:grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+      align-items: stretch;
+      position:relative;
+      z-index:2;
+    }
+
+    /* Left hero panel */
+    .hero{
+      border-radius: var(--radius);
+      padding: 28px 28px;
+      background:
+        radial-gradient(800px 500px at 20% 10%, rgba(0,255,156,0.12), transparent 60%),
+        radial-gradient(700px 500px at 90% 30%, rgba(0,204,255,0.10), transparent 60%),
+        rgba(15, 17, 20, 0.40);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(120deg, rgba(0,255,156,0.08), transparent 35%),
+        linear-gradient(300deg, rgba(0,204,255,0.06), transparent 40%);
+      opacity: 0.9;
+      pointer-events:none;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 14px;
+      position:relative;
+      z-index:1;
+    }
+
+    .brandMark{
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(0,255,156,0.45), transparent 60%),
+        linear-gradient(135deg, rgba(0,255,156,0.75), rgba(0,204,255,0.55));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.35) inset,
+        0 12px 28px rgba(0,255,156,0.10);
+      display:grid;
+      place-items:center;
+    }
+
+    .brandMark svg{
+      width: 24px;
+      height: 24px;
+      opacity: 0.95;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.5));
+    }
+
+    .brandTitle{
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin:0;
+      line-height:1.1;
+    }
+
+    .brandSub{
+      margin: 2px 0 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .headline{
+      position:relative;
+      z-index:1;
+      margin: 18px 0 10px 0;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.6px;
+    }
+
+    .headline .grad{
+      background: linear-gradient(90deg, var(--green), var(--cyan), var(--green));
+      -webkit-background-clip: text;
+      background-clip:text;
+      color: transparent;
+      text-shadow: 0 0 24px rgba(0,255,156,0.16);
+    }
+
+    .desc{
+      position:relative;
+      z-index:1;
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 52ch;
+    }
+
+    .chips{
+      position:relative;
+      z-index:1;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .chip{
+      font-size: 12px;
+      color: rgba(234,247,241,0.92);
+      border: 1px solid rgba(0,255,156,0.22);
+      background: rgba(0,255,156,0.06);
+      padding: 8px 10px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      user-select:none;
+    }
+
+    .chip .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(0,255,156,0.14);
+    }
+
+    .chip.cyan{ border-color: rgba(0,204,255,0.22); background: rgba(0,204,255,0.06); }
+    .chip.cyan .dot{ background: var(--cyan); box-shadow: 0 0 0 4px rgba(0,204,255,0.14); }
+
+    .heroFooter{
+      position:absolute;
+      left: 28px;
+      bottom: 24px;
+      right: 28px;
+      display:flex;
+      justify-content:space-between;
+      gap: 14px;
+      color: var(--muted2);
+      font-size: 12px;
+      z-index:1;
+    }
+
+    .heroFooter strong{ color: rgba(234,247,241,0.88); font-weight: 600; }
+
+    /* Login panel */
+    .panel{
+      border-radius: var(--radius);
+      padding: 22px;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      align-self: center;
+    }
+
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:
+        radial-gradient(500px 200px at 20% 0%, rgba(0,255,156,0.10), transparent 55%),
+        radial-gradient(420px 220px at 90% 20%, rgba(0,204,255,0.08), transparent 55%);
+      pointer-events:none;
+    }
+
+    .panelInner{ position:relative; z-index:1; }
+
+    .topRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .logoWrap{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .logoFrame{
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      padding: 6px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(0,255,156,0.26), transparent 60%),
+        linear-gradient(135deg, rgba(0,255,156,0.55), rgba(0,204,255,0.35));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.35),
+        0 0 20px rgba(0,255,156,0.10);
+      display:grid;
+      place-items:center;
+    }
+
+    .logoFrame img{
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #0c0e10;
+      border: 1px solid rgba(0,0,0,0.35);
+    }
+
+    .panelTitle{
+      margin:0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .panelSub{
+      margin: 2px 0 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Segmented toggle */
+    .seg{
+      display:flex;
+      align-items:center;
+      background: rgba(10,12,14,0.55);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px;
+      gap: 6px;
+    }
+
+    .seg button{
+      appearance:none;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(234,247,241,0.86);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor:pointer;
+      transition: .18s ease;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .seg button:hover{ background: rgba(255,255,255,0.04); }
+
+    .seg button.active{
+      background: rgba(0,255,156,0.12);
+      border-color: rgba(0,255,156,0.38);
+      box-shadow: 0 10px 22px rgba(0,255,156,0.08);
+      color: rgba(234,247,241,0.98);
+    }
+
+    .seg .pillDot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(234,247,241,0.32);
+      box-shadow: 0 0 0 4px rgba(234,247,241,0.05);
+    }
+
+    .seg button.active .pillDot{
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(0,255,156,0.12);
+    }
+
+    /* Form */
+    form{ margin:0; }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .field label{
+      font-size: 12px;
+      color: rgba(234,247,241,0.74);
+      letter-spacing: 0.2px;
+    }
+
+    .control{
+      position:relative;
+    }
+
+    .input{
+      width: 100%;
+      padding: 12px 12px;
+      background: rgba(10,12,14,0.55);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      outline:none;
+      transition: .18s ease;
+      font-size: 14px;
+    }
+
+    .input::placeholder{ color: rgba(234,247,241,0.35); }
+
+    .input:focus{
+      border-color: rgba(0,255,156,0.42);
+      box-shadow: var(--ring);
+    }
+
+    .iconBtn{
+      position:absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.03);
+      color: rgba(234,247,241,0.86);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      transition: .18s ease;
+    }
+
+    .iconBtn:hover{ background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.10); }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      margin-top: 12px;
+      color: rgba(234,247,241,0.70);
+      font-size: 12px;
+    }
+
+    .check{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .check input{ width: 16px; height: 16px; accent-color: var(--green); }
+
+    .roleTag{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      color: rgba(234,247,241,0.78);
+      font-weight: 600;
+    }
+
+    .roleTag.admin{ border-color: rgba(0,204,255,0.20); background: rgba(0,204,255,0.06); }
+
+    /* Primary button */
+    .btn{
+      width:100%;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,255,156,0.40);
+      background: linear-gradient(135deg, rgba(0,255,156,0.95), rgba(0,204,255,0.65));
+      color: #051012;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      cursor:pointer;
+      transition: transform .16s ease, filter .16s ease;
+      box-shadow: 0 14px 30px rgba(0,255,156,0.10);
+    }
+
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+    .btn:active{ transform: translateY(0px) scale(0.99); }
+    .btn:disabled{ opacity: .60; cursor:not-allowed; }
+
+    .divider{
+      margin: 16px 0 12px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    }
+
+    .miniBadges{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+    }
+
+    .badge{
+      font-size: 11px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,255,156,0.22);
+      background: rgba(0,255,156,0.06);
+      color: rgba(234,247,241,0.86);
+    }
+
+    .badge.cyan{ border-color: rgba(0,204,255,0.20); background: rgba(0,204,255,0.06); }
+
+    /* Error */
+    .error{
+      margin-top: 12px;
+      min-height: 20px;
+      color: var(--warn);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .foot{
+      margin-top: 14px;
+      text-align:center;
+      font-size: 11px;
+      color: rgba(234,247,241,0.50);
+      letter-spacing: 0.25px;
+    }
+
+    /* Small screens */
+    @media (max-width: 860px){
+      .wrap{ grid-template-columns: 1fr; }
+      .heroFooter{ position:relative; left:auto; right:auto; bottom:auto; margin-top: 18px; }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .grid, .blob{ animation:none !important; }
+      *{ scroll-behavior: auto !important; }
+    }
+
+    .hidden{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="grid" aria-hidden="true"></div>
+  <div class="blob a" aria-hidden="true"></div>
+  <div class="blob b" aria-hidden="true"></div>
+  <div class="blob c" aria-hidden="true"></div>
+
+  <main class="wrap" role="main">
+    <!-- HERO / BRAND PANEL -->
+    <section class="hero" aria-label="Minecraft Server Manager">
+      <div class="brand">
+        <div class="brandMark" aria-hidden="true">
+          <img src="mc logo.jpg" alt="" style="width: 100%; height: 100%; border-radius: 12px; object-fit: cover; border: 1px solid rgba(0,0,0,0.35);" />
+        </div>
+        <div>
+          <p class="brandTitle">Minecraft Server Manager</p>
+          <p class="brandSub">Secure access • Live console • Quick status</p>
+        </div>
+      </div>
+
+      <h2 class="headline">
+        Control your server with a <span class="grad">clean</span>, <span class="grad">fast</span> dashboard.
+      </h2>
+      <p class="desc">
+        Log in as a User to view status and use permitted commands, or switch to Admin to manage permissions and power controls.
+        Built for speed and clarity.
+      </p>
+
+      <div class="chips" aria-hidden="true">
+        <div class="chip"><span class="dot"></span> Live Console</div>
+        <div class="chip cyan"><span class="dot"></span> Role-based Access</div>
+        <div class="chip"><span class="dot"></span> Fast Status</div>
+      </div>
+
+      <div class="heroFooter">
+        <div><strong>Tip:</strong> Keep your admin key private.</div>
+        <div><strong>Security:</strong> Firebase rules matter.</div>
+      </div>
+    </section>
+
+    <!-- LOGIN PANEL -->
+    <section class="panel" aria-label="Login">
+      <div class="panelInner">
+        <div class="topRow">
+          <div class="logoWrap">
+            <div class="logoFrame">
+              <img src="logo.png" alt="Minecraft Server Manager logo" />
+            </div>
+            <div>
+              <p class="panelTitle">Sign in</p>
+              <p class="panelSub">Choose your role to continue</p>
+            </div>
+          </div>
+
+          <div class="seg" role="tablist" aria-label="Role selector">
+            <button id="userTab" class="active" type="button" role="tab" aria-selected="true" onclick="showUser()">
+              <span class="pillDot" aria-hidden="true"></span>
+              User
+            </button>
+            <button id="adminTab" type="button" role="tab" aria-selected="false" onclick="showAdmin()">
+              <span class="pillDot" aria-hidden="true"></span>
+              Admin
+            </button>
+          </div>
+        </div>
+
+        <!-- USER LOGIN -->
+        <form id="userLogin" autocomplete="on" onsubmit="event.preventDefault(); loginUser();">
+          <div class="field">
+            <label for="username">Username</label>
+            <div class="control">
+              <input class="input" type="text" id="username" placeholder="e.g. MC" autocomplete="username" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="control">
+              <input class="input" type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+              <button class="iconBtn" id="toggleUserPass" type="button" title="Show/Hide password" aria-label="Toggle password visibility">
+                <!-- eye icon -->
+                <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="rgba(234,247,241,0.85)" stroke-width="1.7"/>
+                  <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="rgba(234,247,241,0.55)" stroke-width="1.7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="check">
+              <input type="checkbox" id="rememberUser" />
+              Remember username
+            </label>
+            <span class="roleTag">Role: User</span>
+          </div>
+
+          <button class="btn" id="userLoginBtn" type="submit">Login</button>
+        </form>
+
+        <!-- ADMIN LOGIN -->
+        <form id="adminLogin" class="hidden" autocomplete="off" onsubmit="event.preventDefault(); loginAdmin();">
+          <div class="field">
+            <label for="adminKey">Admin Key</label>
+            <div class="control">
+              <input class="input" type="password" id="adminKey" placeholder="Enter Admin Key" autocomplete="one-time-code" />
+              <button class="iconBtn" id="toggleAdminKey" type="button" title="Show/Hide admin key" aria-label="Toggle admin key visibility">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="rgba(234,247,241,0.85)" stroke-width="1.7"/>
+                  <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="rgba(234,247,241,0.55)" stroke-width="1.7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+            <span></span>
+            <span class="roleTag admin">Role: Admin</span>
+          </div>
+
+          <button class="btn" id="adminLoginBtn" type="submit">Login</button>
+        </form>
+
+        <div id="error" class="error" role="status" aria-live="polite"></div>
+
+        <div class="divider"></div>
+
+        <div class="miniBadges" aria-hidden="true">
+          <span class="badge">Encrypted Session</span>
+          <span class="badge cyan">Realtime DB</span>
+          <span class="badge">Status Cards</span>
+        </div>
+
+        <div class="foot">Developed By Shariar Nafiz Emon™</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Your existing logic (kept), with small UX upgrades =====
+    const FIREBASE_DB_URL = "https://user-log-ec5b2-default-rtdb.firebaseio.com";
+
+    const userTab = document.getElementById("userTab");
+    const adminTab = document.getElementById("adminTab");
+
+    const userLoginForm = document.getElementById("userLogin");
+    const adminLoginForm = document.getElementById("adminLogin");
+
+    const usernameEl = document.getElementById("username");
+    const passwordEl = document.getElementById("password");
+    const adminKeyEl = document.getElementById("adminKey");
+
+    const userLoginBtn = document.getElementById("userLoginBtn");
+    const adminLoginBtn = document.getElementById("adminLoginBtn");
+
+    const rememberUser = document.getElementById("rememberUser");
+
+    // Toggle buttons
+    const toggleUserPass = document.getElementById("toggleUserPass");
+    const toggleAdminKey = document.getElementById("toggleAdminKey");
+
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("username");
+
+    // Restore remembered username
+    try {
+      const remembered = localStorage.getItem("msm_username");
+      if (remembered && usernameEl) {
+        usernameEl.value = remembered;
+        rememberUser.checked = true;
+      }
+    } catch (_) {}
+
+    async function fetchJson(path) {
+      const response = await fetch(`${FIREBASE_DB_URL}${path}.json`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Database request failed");
+      return response.json();
+    }
+
+    function setLoading(btn, isLoading) {
+      if (!btn) return;
+      btn.disabled = isLoading;
+      btn.textContent = isLoading ? "Checking…" : "Login";
+    }
+
+    function showUser() {
+      userLoginForm.classList.remove("hidden");
+      adminLoginForm.classList.add("hidden");
+      userTab.classList.add("active");
+      adminTab.classList.remove("active");
+      userTab.setAttribute("aria-selected", "true");
+      adminTab.setAttribute("aria-selected", "false");
+      clearError();
+      usernameEl?.focus();
+    }
+
+    function showAdmin() {
+      adminLoginForm.classList.remove("hidden");
+      userLoginForm.classList.add("hidden");
+      adminTab.classList.add("active");
+      userTab.classList.remove("active");
+      adminTab.setAttribute("aria-selected", "true");
+      userTab.setAttribute("aria-selected", "false");
+      clearError();
+      adminKeyEl?.focus();
+    }
+
+    function showError(msg) {
+      const error = document.getElementById("error");
+      error.textContent = msg;
+    }
+
+    function clearError() {
+      const error = document.getElementById("error");
+      error.textContent = "";
+    }
+
+    function isValidFirebaseKeySegment(s) {
+      // Firebase RTDB disallows . # $ / [ ] in keys
+      return !/[.#$/\[\]]/.test(s);
+    }
+
+    // Password toggles
+    toggleUserPass?.addEventListener("click", () => {
+      if (!passwordEl) return;
+      passwordEl.type = passwordEl.type === "password" ? "text" : "password";
+    });
+
+    toggleAdminKey?.addEventListener("click", () => {
+      if (!adminKeyEl) return;
+      adminKeyEl.type = adminKeyEl.type === "password" ? "text" : "password";
+    });
+
+    async function loginUser() {
+      const user = (usernameEl?.value || "").trim();
+      const pass = (passwordEl?.value || "");
+
+      if (!user || !pass) {
+        showError("Enter username and password.");
+        return;
+      }
+
+      if (!isValidFirebaseKeySegment(user)) {
+        showError("Username contains invalid characters.");
+        return;
+      }
+
+      try {
+        clearError();
+        setLoading(userLoginBtn, true);
+
+        const savedPass = await fetchJson(`/login_info/user/${user}/pass`);
+        if (savedPass && pass === savedPass) {
+          // Remember username if checked
+          try {
+            if (rememberUser?.checked) localStorage.setItem("msm_username", user);
+            else localStorage.removeItem("msm_username");
+          } catch (_) {}
+
+          sessionStorage.setItem("role", "user");
+          sessionStorage.setItem("username", user);
+          localStorage.setItem("role", "user");
+          localStorage.setItem("username", user);
+          window.location.href = "user.html";
+          return;
+        }
+        showError("Invalid username or password!");
+      } catch (err) {
+        showError("Cannot connect to login database.");
+      } finally {
+        setLoading(userLoginBtn, false);
+      }
+    }
+
+    async function loginAdmin() {
+      const key = (adminKeyEl?.value || "");
+
+      if (!key) {
+        showError("Enter admin key.");
+        return;
+      }
+
+      try {
+        clearError();
+        setLoading(adminLoginBtn, true);
+
+        const savedKey = await fetchJson("/login_info/admin/key");
+        if (savedKey && key === savedKey) {
+          sessionStorage.setItem("role", "admin");
+          sessionStorage.removeItem("username");
+          localStorage.setItem("role", "admin");
+          localStorage.removeItem("username");
+          window.location.href = "admin.html";
+          return;
+        }
+        showError("Invalid admin key!");
+      } catch (err) {
+        showError("Cannot connect to login database.");
+      } finally {
+        setLoading(adminLoginBtn, false);
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", (e) => {
+      // Ctrl + 1 => User, Ctrl + 2 => Admin
+      if (e.ctrlKey && e.key === "1") showUser();
+      if (e.ctrlKey && e.key === "2") showAdmin();
+    });
+
+    // Default focus
+    usernameEl?.focus();
+  </script>
+</body>
+</html>

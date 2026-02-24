@@ -1,0 +1,1335 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Minecraft Server Manager - User</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#070A0B;
+  --panel: rgba(18, 20, 23, 0.72);
+  --solid:#0E1114;
+  --border: rgba(255,255,255,0.08);
+  --borderStrong: rgba(255,255,255,0.14);
+  --text:#EAF7F1;
+  --muted: rgba(234,247,241,0.72);
+  --muted2: rgba(234,247,241,0.55);
+  --green:#00FF9C;
+  --cyan:#00CCFF;
+  --amber:#FFCC66;
+  --red:#FF5A5A;
+  --shadow: 0 24px 80px rgba(0,0,0,.60);
+  --ring: 0 0 0 4px rgba(0,255,156,0.18);
+  --radius: 18px;
+  --radiusSm: 14px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1000px 600px at 15% 10%, rgba(0,255,156,0.14), transparent 60%),
+    radial-gradient(900px 600px at 85% 30%, rgba(0,204,255,0.10), transparent 65%),
+    radial-gradient(900px 700px at 50% 120%, rgba(0,255,156,0.08), transparent 60%),
+    linear-gradient(180deg, #050708 0%, #070A0B 50%, #050708 100%);
+  overflow-x:hidden;
+}
+
+/* animated grid */
+.grid{
+  position:fixed; inset:-2px;
+  background:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.10;
+  mask-image: radial-gradient(60% 50% at 50% 25%, black 40%, transparent 70%);
+  pointer-events:none;
+  animation: gridDrift 12s linear infinite;
+}
+@keyframes gridDrift{ from{ transform: translate3d(0,0,0);} to{ transform: translate3d(-56px,-56px,0);} }
+
+/* blobs */
+.blob{
+  position:fixed;
+  width: 560px; height: 560px;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: .22;
+  pointer-events:none;
+  mix-blend-mode: screen;
+  animation: floaty 10s ease-in-out infinite;
+}
+.blob.a{ left:-180px; top:-200px; background: radial-gradient(circle at 30% 30%, rgba(0,255,156,0.95), transparent 60%); }
+.blob.b{ right:-240px; top:120px; background: radial-gradient(circle at 30% 30%, rgba(0,204,255,0.95), transparent 60%); animation-delay:-2s; }
+.blob.c{ left:20%; bottom:-300px; background: radial-gradient(circle at 30% 30%, rgba(0,255,156,0.55), transparent 60%); animation-delay:-4s; }
+@keyframes floaty{ 0%,100%{ transform: translate3d(0,0,0) scale(1);} 50%{ transform: translate3d(0,24px,0) scale(1.03);} }
+
+.container{
+  width: min(1250px, 94vw);
+  margin: 18px auto 22px;
+  position:relative;
+  z-index:1;
+}
+
+.header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: rgba(10,12,14,0.55);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  min-width: 260px;
+}
+.header-logo{
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #0c0e10;
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.35) inset,
+    0 12px 28px rgba(0,255,156,0.10);
+}
+.titleWrap{ display:flex; flex-direction:column; gap:2px; }
+.title{ margin:0; font-weight:800; letter-spacing:-0.3px; font-size:16px; }
+.subtitle{ margin:0; color: var(--muted); font-size: 12px; }
+
+.headerRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.pill{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  color: rgba(234,247,241,0.86);
+  font-size: 12px;
+  user-select:none;
+}
+.pill strong{ color: rgba(234,247,241,0.95); font-weight: 700; }
+.pill .dot{
+  width: 8px; height: 8px; border-radius: 999px;
+  background: rgba(234,247,241,0.25);
+  box-shadow: 0 0 0 4px rgba(234,247,241,0.06);
+}
+.pill.good .dot{ background: var(--green); box-shadow: 0 0 0 4px rgba(0,255,156,0.12); }
+.pill.bad .dot{ background: var(--red); box-shadow: 0 0 0 4px rgba(255,90,90,0.12); }
+.pill.warn .dot{ background: var(--amber); box-shadow: 0 0 0 4px rgba(255,204,102,0.12); }
+
+/* menu */
+.menu{ position:relative; }
+.menuBtn{
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--borderStrong);
+  background: rgba(255,255,255,0.04);
+  color: rgba(234,247,241,0.90);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition: transform .16s ease, background .16s ease;
+}
+.menuBtn:hover{ background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+.menuBtn:active{ transform: translateY(0px) scale(0.99); }
+.menuLines{ display:flex; flex-direction:column; gap: 5px; }
+.menuLines span{ width: 18px; height: 2px; border-radius: 999px; background: rgba(234,247,241,0.78); }
+
+.menuPanel{
+  position:absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 230px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(14, 17, 20, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 24px 80px rgba(0,0,0,.55);
+  padding: 8px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events:none;
+  transition: .16s ease;
+  z-index: 50;
+}
+.menuPanel.open{
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events:auto;
+}
+.menuItem{
+  width: 100%;
+  text-align:left;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.03);
+  color: rgba(234,247,241,0.92);
+  padding: 10px 10px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  transition: .14s ease;
+}
+.menuItem:hover{ background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
+.menuItem.active{ border-color: rgba(0,255,156,0.22); background: rgba(0,255,156,0.06); }
+.menuItem.danger{ border-color: rgba(255,90,90,0.20); background: rgba(255,90,90,0.08); }
+.menuSep{ height:1px; margin: 8px 6px; background: rgba(255,255,255,0.08); }
+
+/* panels */
+.infoBar{
+  margin-top: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.card{
+  border: 1px solid var(--border);
+  border-radius: var(--radiusSm);
+  background: rgba(10,12,14,0.48);
+  padding: 12px;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(600px 180px at 15% 0%, rgba(0,255,156,0.10), transparent 55%),
+    radial-gradient(520px 220px at 95% 10%, rgba(0,204,255,0.08), transparent 55%);
+  pointer-events:none;
+  opacity: 0.8;
+}
+.cardInner{ position:relative; z-index:1; }
+.cardTop{ display:flex; align-items:flex-start; justify-content:space-between; gap: 10px; }
+.cardTitle{ font-size: 12px; color: var(--muted); letter-spacing: 0.2px; }
+.cardValue{ margin-top: 6px; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+.valueOnline{ color: var(--green); }
+.valueOffline{ color: var(--red); }
+.valueWarn{ color: var(--amber); }
+.small{ margin-top: 2px; font-size: 12px; color: var(--muted2); }
+
+.switch{ display:inline-flex; align-items:center; gap: 10px; }
+.toggle{
+  width: 54px; height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--borderStrong);
+  background: rgba(255,255,255,0.04);
+  position:relative;
+  cursor:pointer;
+  transition: .18s ease;
+}
+.toggle::after{
+  content:"";
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  position:absolute;
+  top: 50%; left: 4px;
+  transform: translateY(-50%);
+  background: rgba(234,247,241,0.75);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+  transition: .18s ease;
+}
+.toggle.on{
+  border-color: rgba(0,255,156,0.45);
+  background: rgba(0,255,156,0.14);
+}
+.toggle.on::after{
+  left: 26px;
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(0,255,156,0.12), 0 12px 22px rgba(0,255,156,0.10);
+}
+.toggleLabel{
+  font-size: 12px;
+  color: rgba(234,247,241,0.85);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.btn{
+  border:none;
+  cursor:pointer;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  transition: transform .16s ease, filter .16s ease, opacity .16s ease;
+}
+.btnPrimary{
+  border: 1px solid rgba(0,255,156,0.40);
+  background: linear-gradient(135deg, rgba(0,255,156,0.95), rgba(0,204,255,0.65));
+  color: #051012;
+  box-shadow: 0 14px 30px rgba(0,255,156,0.10);
+}
+.btnPrimary:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+.btnPrimary:active{ transform: translateY(0px) scale(0.99); }
+.btnGhost{
+  border: 1px solid var(--borderStrong);
+  background: rgba(255,255,255,0.04);
+  color: rgba(234,247,241,0.90);
+}
+.btnGhost:hover{ background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+.btnGhost:active{ transform: translateY(0px) scale(0.99); }
+.btn:disabled{ opacity: 0.45; cursor:not-allowed; transform:none !important; }
+
+.statusPanel{
+  margin-top: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.stat{
+  border-radius: var(--radiusSm);
+  border: 1px solid var(--border);
+  background: rgba(10,12,14,0.48);
+  padding: 12px;
+  position:relative;
+  overflow:hidden;
+}
+.stat::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(520px 180px at 15% 0%, rgba(0,255,156,0.08), transparent 55%),
+    radial-gradient(480px 180px at 95% 0%, rgba(0,204,255,0.06), transparent 55%);
+  opacity:0.75;
+  pointer-events:none;
+}
+.statInner{ position:relative; z-index:1; }
+.statLabel{ font-size: 12px; color: var(--muted); }
+.statValue{ margin-top: 6px; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+
+.playerNames{ margin-top: 8px; display:flex; flex-wrap:wrap; gap: 6px; }
+.playerChip{
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,156,0.22);
+  background: rgba(0,255,156,0.06);
+  color: rgba(234,247,241,0.88);
+}
+.playerEmpty{ color: var(--muted2); }
+
+.ramBar{
+  margin-top: 8px;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow:hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ramFill{
+  height:100%;
+  width:0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0,255,156,0.95), rgba(0,204,255,0.65));
+  transition: width .35s ease;
+}
+
+/* console */
+.consoleShell{
+  margin-top: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+.consoleToolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(10,12,14,0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: var(--muted);
+  font-size: 12px;
+}
+.console{
+  height: min(54vh, 560px);
+  padding: 14px;
+  overflow-y:auto;
+  background: #060708;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.consoleLine{ white-space: pre-wrap; word-break: break-word; }
+.consoleLine.new{ animation: lineIn .18s ease forwards; }
+@keyframes lineIn{ from{ opacity:0; transform: translateY(2px);} to{ opacity:1; transform: translateY(0);} }
+
+.inputArea{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(10,12,14,0.55);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.prompt{ color: rgba(234,247,241,0.70); font-weight: 900; }
+.cmdInput{
+  flex:1;
+  background: rgba(10,12,14,0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 12px 12px;
+  outline:none;
+  color: var(--text);
+  font-size: 14px;
+}
+.cmdInput:focus{ border-color: rgba(0,255,156,0.42); box-shadow: var(--ring); }
+
+.controls{
+  margin-top: 14px;
+  display:flex;
+  gap: 10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+/* tabs */
+.tab{ display:block; }
+.tab.hidden{ display:none; }
+
+/* hardware */
+.hardwareGrid{
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px){ .hardwareGrid{ grid-template-columns: 1fr; } }
+.hwRow{ display:flex; align-items:baseline; justify-content:space-between; gap: 10px; }
+.hwName{ color: var(--muted); font-size: 12px; }
+.hwValue{ font-weight: 800; }
+.hwBar{ margin-top: 8px; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow:hidden; border: 1px solid rgba(255,255,255,0.08); }
+.hwFill{ height:100%; width:0%; border-radius: 999px; background: linear-gradient(90deg, rgba(0,255,156,0.95), rgba(0,204,255,0.65)); transition: width .35s ease; }
+
+/* maintenance overlay */
+#maintenanceOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 9999;
+}
+#maintenanceOverlay.active{ opacity: 1; visibility: visible; pointer-events: auto; }
+#maintenanceCard{
+  background: rgba(14, 17, 20, 0.92);
+  border: 1px solid rgba(0,255,156,0.35);
+  border-radius: 18px;
+  max-width: 520px;
+  width: 100%;
+  padding: 20px 18px;
+  box-shadow: 0 0 30px rgba(0, 255, 156, 0.18);
+  transform: scale(0.92);
+  opacity: 0;
+}
+#maintenanceOverlay.active #maintenanceCard{ animation: popupIn 0.24s ease forwards; }
+@keyframes popupIn{ from{ transform: scale(0.92); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+
+@media (max-width: 1080px){
+  .infoBar{ grid-template-columns: 1fr; }
+  .statusPanel{ grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce){
+  .grid, .blob, .consoleLine.new{ animation:none !important; }
+}
+</style>
+</head>
+
+<body>
+  <div class="grid" aria-hidden="true"></div>
+  <div class="blob a" aria-hidden="true"></div>
+  <div class="blob b" aria-hidden="true"></div>
+  <div class="blob c" aria-hidden="true"></div>
+
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <img src="logo.png" alt="Minecraft Server Manager logo" class="header-logo"
+             onerror="this.style.display='none';" />
+        <div class="titleWrap">
+          <h1 class="title">Minecraft Server Manager</h1>
+          <p class="subtitle">User Panel • Live Console • Safe Controls</p>
+        </div>
+      </div>
+
+      <div class="headerRight">
+        <div class="pill" id="pillServer">
+          <span class="dot" aria-hidden="true"></span>
+          <span>Server:</span>
+          <strong id="serverStatus">UNKNOWN</strong>
+        </div>
+        <div class="pill" id="pillPc">
+          <span class="dot" aria-hidden="true"></span>
+          <span>PC:</span>
+          <strong id="pcStatus">UNKNOWN</strong>
+        </div>
+
+        <div class="menu">
+          <button class="menuBtn" id="menuBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="Menu">
+            <span class="menuLines" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </span>
+          </button>
+          <div class="menuPanel" id="menuPanel" role="menu" aria-label="Navigation">
+            <button class="menuItem" role="menuitem" type="button" onclick="showTab('home')">Home</button>
+            <button class="menuItem" role="menuitem" type="button" onclick="showTab('hardware')">Hardware Status</button>
+            <div class="menuSep"></div>
+            <button class="menuItem danger" role="menuitem" type="button" onclick="logout()">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- HOME TAB -->
+    <section id="tabHome" class="tab" aria-label="Home">
+      <section class="infoBar" aria-label="Quick actions">
+        <div class="card">
+          <div class="cardInner">
+            <div class="cardTop">
+              <div>
+                <div class="cardTitle">Display Status</div>
+                <div id="displayStateText" class="cardValue valueOffline">OFF</div>
+                <div class="small">Toggle ON/OFF (live control)</div>
+              </div>
+              <div class="switch">
+                <div id="displayToggle" class="toggle" role="switch" aria-checked="false" tabindex="0" title="Toggle display status"></div>
+                <div class="toggleLabel" id="displayToggleLabel" style="display:none;">OFF</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardInner">
+            <div class="cardTop">
+              <div>
+                <div class="cardTitle">PC Power</div>
+                <div id="pcControlText" class="cardValue valueOffline">OFFLINE</div>
+                <div class="small">User can only TURN ON the PC</div>
+              </div>
+              <button id="pcOnBtn" class="btn btnPrimary" onclick="turnOnPc()">TURN ON</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardInner">
+            <div class="cardTop">
+              <div>
+                <div class="cardTitle">Command Permission</div>
+                <div id="rulesText" class="cardValue valueWarn">CHECKING…</div>
+                <div class="small" id="rulesSub">Syncing rules</div>
+              </div>
+              <button class="btn btnGhost" onclick="refreshUserRules()">Refresh</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="statusPanel" aria-label="Server status">
+        <div class="stat">
+          <div class="statInner">
+            <div class="statLabel">Players Online</div>
+            <div id="playerCount" class="statValue">0 / 20</div>
+            <div id="playerNames" class="playerNames"><span class="playerEmpty">No players</span></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="statInner">
+            <div class="statLabel">RAM Usage</div>
+            <div id="ramText" class="statValue">0MB / 2048MB</div>
+            <div class="ramBar"><div id="ramFill" class="ramFill"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="consoleShell" aria-label="Console">
+        <div class="consoleToolbar">
+          <span id="consoleHint">Console: Live</span>
+          <button class="btn btnGhost" onclick="clearConsole()">Clear</button>
+        </div>
+
+        <div id="console" class="console">
+          <div class="consoleLine">[User] Console ready.</div>
+        </div>
+
+        <div class="inputArea">
+          <span class="prompt">&gt;</span>
+          <input id="cmdInput" class="cmdInput" type="text" placeholder="Enter command…" aria-label="Console command" onkeydown="handleCommand(event)">
+          <button class="btn btnPrimary" onclick="sendQuickCommand()">Send</button>
+        </div>
+      </section>
+
+      <div class="controls">
+        <button id="startBtn" class="btn btnPrimary" onclick="startServer()">Start Server</button>
+        <button id="stopBtn" class="btn btnGhost" onclick="stopServer()">Stop Server</button>
+      </div>
+    </section>
+
+    <!-- HARDWARE TAB -->
+    <section id="tabHardware" class="tab hidden" aria-label="Hardware Status">
+      <section class="card" style="margin-top:14px;">
+        <div class="cardInner">
+          <div class="cardTop">
+            <div>
+              <div class="cardTitle">Hardware Status</div>
+              <div class="small">Pulled from <code style="color:rgba(234,247,241,0.85)">/hardware</code></div>
+            </div>
+            <button class="btn btnGhost" onclick="refreshHardware()">Refresh</button>
+          </div>
+
+          <div class="hardwareGrid">
+            <div class="card"><div class="cardInner">
+              <div class="hwRow"><div class="hwName">CPU</div><div class="hwValue" id="cpuName">--</div></div>
+              <div class="small" id="cpuUsageText">Usage: --%</div>
+              <div class="hwBar"><div class="hwFill" id="cpuFill"></div></div>
+            </div></div>
+
+            <div class="card"><div class="cardInner">
+              <div class="hwRow"><div class="hwName">GPU</div><div class="hwValue" id="gpuName">--</div></div>
+              <div class="small" id="gpuUsageText">Usage: --%</div>
+              <div class="hwBar"><div class="hwFill" id="gpuFill"></div></div>
+            </div></div>
+
+            <div class="card"><div class="cardInner">
+              <div class="hwRow"><div class="hwName">RAM</div><div class="hwValue" id="pcRamText">--</div></div>
+              <div class="small" id="pcRamUsageText">Usage: --%</div>
+              <div class="hwBar"><div class="hwFill" id="pcRamFill"></div></div>
+            </div></div>
+
+            <div class="card"><div class="cardInner">
+              <div class="hwRow"><div class="hwName">Storage</div><div class="hwValue" id="storageText">--</div></div>
+              <div class="small" id="storageUsageText">Usage: --%</div>
+              <div class="hwBar"><div class="hwFill" id="storageFill"></div></div>
+            </div></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <!-- maintenance overlay -->
+  <div id="maintenanceOverlay">
+    <div id="maintenanceCard">
+      <h2 style="margin:0 0 8px 0;">Server Under Maintenance</h2>
+      <p id="maintenanceText" style="margin:0; color:rgba(234,247,241,0.85);">Please wait.</p>
+    </div>
+  </div>
+
+<script>
+/* ============================
+   FIXED ACCESS CONTROL (NO INSTANT "NOT OPENING" BUG)
+   - If role missing: send back to index.html with a message
+   - If role is user: keep going
+============================ */
+(function accessControl(){
+  const storedRole = sessionStorage.getItem("role") || localStorage.getItem("role");
+  const storedUser = sessionStorage.getItem("username") || localStorage.getItem("username");
+
+  if (storedRole !== "user") {
+    // IMPORTANT: this is why the page looked like it "doesn't open"
+    // because it instantly redirected.
+    alert("Please login as USER first.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  // ensure session storage exists for refresh
+  if (!sessionStorage.getItem("role")) sessionStorage.setItem("role", storedRole);
+  if (storedUser && !sessionStorage.getItem("username")) sessionStorage.setItem("username", storedUser);
+})();
+
+/* ============================
+   CONFIG
+============================ */
+const API_BASE = "https://mc-api-o0jz.onrender.com/v1";
+const MOTOR_API_BASE = "https://esp-32-f8bg.onrender.com";
+const PC_ON_COMMAND = "pc_on";
+
+/* ============================
+   ELEMENTS
+============================ */
+const consoleBox = document.getElementById("console");
+const playerCount = document.getElementById("playerCount");
+const playerNames = document.getElementById("playerNames");
+const ramText = document.getElementById("ramText");
+const ramFill = document.getElementById("ramFill");
+
+const pcStatus = document.getElementById("pcStatus");
+const serverStatus = document.getElementById("serverStatus");
+const pillPc = document.getElementById("pillPc");
+const pillServer = document.getElementById("pillServer");
+
+const cmdInput = document.getElementById("cmdInput");
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+
+const maintenanceOverlay = document.getElementById("maintenanceOverlay");
+const maintenanceText = document.getElementById("maintenanceText");
+
+const rulesText = document.getElementById("rulesText");
+const rulesSub = document.getElementById("rulesSub");
+
+const pcControlText = document.getElementById("pcControlText");
+const pcOnBtn = document.getElementById("pcOnBtn");
+
+const displayStateText = document.getElementById("displayStateText");
+const displayToggle = document.getElementById("displayToggle");
+const displayToggleLabel = document.getElementById("displayToggleLabel");
+
+const tabHome = document.getElementById("tabHome");
+const tabHardware = document.getElementById("tabHardware");
+const menuBtn = document.getElementById("menuBtn");
+const menuPanel = document.getElementById("menuPanel");
+
+// hardware elements
+const cpuNameEl = document.getElementById("cpuName");
+const cpuUsageTextEl = document.getElementById("cpuUsageText");
+const cpuFillEl = document.getElementById("cpuFill");
+const gpuNameEl = document.getElementById("gpuName");
+const gpuUsageTextEl = document.getElementById("gpuUsageText");
+const gpuFillEl = document.getElementById("gpuFill");
+const pcRamTextEl = document.getElementById("pcRamText");
+const pcRamUsageTextEl = document.getElementById("pcRamUsageText");
+const pcRamFillEl = document.getElementById("pcRamFill");
+const storageTextEl = document.getElementById("storageText");
+const storageUsageTextEl = document.getElementById("storageUsageText");
+const storageFillEl = document.getElementById("storageFill");
+
+/* ============================
+   STATE
+============================ */
+let consoleOffset = 0;
+let userCommandAllowed = true;
+let maintenanceActive = false;
+
+let consoleLineCount = 1;
+const maxConsoleLines = 900;
+let consoleFlushTimer = null;
+let pendingConsoleLines = [];
+let pollConsoleInFlight = false;
+let refreshStatusInFlight = false;
+let refreshRulesInFlight = false;
+let statusFailureCount = 0;
+
+let hardwareInFlight = false;
+let lastHardware = null;
+
+let statusTimerId = null;
+let consoleTimerId = null;
+let rulesTimerId = null;
+let hardwareTimerId = null;
+
+let lastKnownPcOnline = false;
+let lastKnownServerRunning = false;
+let displayOn = false;
+let desiredMonitorPower = false;
+let lastHeartbeatMs = 0;
+const heartbeatFreshMs = 120000;
+
+/* ============================
+   HELPERS
+============================ */
+function setPillState(pillEl, state) {
+  pillEl.classList.remove("good", "bad", "warn");
+  if (state === "good") pillEl.classList.add("good");
+  if (state === "bad") pillEl.classList.add("bad");
+  if (state === "warn") pillEl.classList.add("warn");
+}
+
+function print(text) { queueConsoleLines([text]); }
+
+function queueConsoleLines(lines) {
+  if (!Array.isArray(lines) || lines.length === 0) return;
+  for (const line of lines) pendingConsoleLines.push(String(line ?? ""));
+  if (consoleFlushTimer === null) consoleFlushTimer = setTimeout(flushConsoleLines, 60);
+}
+
+function flushConsoleLines() {
+  if (pendingConsoleLines.length === 0) { consoleFlushTimer = null; return; }
+  const fragment = document.createDocumentFragment();
+  for (const text of pendingConsoleLines) {
+    const div = document.createElement("div");
+    div.className = "consoleLine new";
+    div.textContent = text;
+    fragment.appendChild(div);
+    consoleLineCount += 1;
+  }
+  pendingConsoleLines = [];
+  consoleBox.appendChild(fragment);
+  while (consoleLineCount > maxConsoleLines && consoleBox.firstElementChild) {
+    consoleBox.removeChild(consoleBox.firstElementChild);
+    consoleLineCount -= 1;
+  }
+  consoleBox.scrollTop = consoleBox.scrollHeight;
+  consoleFlushTimer = null;
+}
+
+function renderPlayerNames(players) {
+  playerNames.innerHTML = "";
+  if (!players || players.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "playerEmpty";
+    empty.textContent = "No players";
+    playerNames.appendChild(empty);
+    return;
+  }
+  for (const name of players) {
+    const cleaned = cleanPlayerName(name);
+    if (!cleaned) continue;
+    const chip = document.createElement("span");
+    chip.className = "playerChip";
+    chip.textContent = cleaned;
+    playerNames.appendChild(chip);
+  }
+}
+
+function cleanPlayerName(name) {
+  let s = String(name || "").trim();
+  s = s.replace(/§./g, "");
+  s = s.replace(/&[0-9A-FK-ORa-fk-or]/g, "");
+  s = s.replace(/\?{1,2}[0-9A-FK-ORa-fk-or]/g, "");
+  const m = s.match(/[A-Za-z0-9_]{1,16}/);
+  return m ? m[0] : "";
+}
+
+function normalizeScheduleValue(value) {
+  if (!value) return "";
+  const trimmed = String(value).trim();
+  if (/^\d{2}:\d{2}$/.test(trimmed)) {
+    const now = new Date();
+    const yyyy = String(now.getFullYear());
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${trimmed}`;
+  }
+  return trimmed;
+}
+function toLocalTimeText(value) {
+  if (typeof value !== "string") return value || "";
+  const normalized = normalizeScheduleValue(value);
+  const dt = new Date(normalized);
+  if (isNaN(dt.getTime())) return value || "";
+  return dt.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+function parseScheduleTime(value) {
+  if (typeof value !== "string") return null;
+  const normalized = normalizeScheduleValue(value);
+  const dt = new Date(normalized);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+async function apiRequest(path, options = {}) {
+  const fetchOptions = { cache: "no-store", ...options };
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `${API_BASE}${path}${sep}_t=${Date.now()}`;
+
+  let res;
+  try {
+    res = await fetch(url, fetchOptions);
+  } catch (e) {
+    throw new Error("NETWORK_ERROR");
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.status === 204 ? {} : res.json();
+}
+
+async function motorRequest(path, options = {}) {
+  const fetchOptions = { cache: "no-store", ...options };
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `${MOTOR_API_BASE}${path}${sep}_t=${Date.now()}`;
+
+  let res;
+  try {
+    res = await fetch(url, fetchOptions);
+  } catch (e) {
+    throw new Error("NETWORK_ERROR");
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.status === 204 ? {} : res.json();
+}
+
+/* ============================
+   NAV MENU + TABS
+============================ */
+function closeMenu(){
+  menuPanel.classList.remove("open");
+  menuBtn.setAttribute("aria-expanded", "false");
+}
+function toggleMenu(){
+  const open = menuPanel.classList.contains("open");
+  if (open) closeMenu();
+  else { menuPanel.classList.add("open"); menuBtn.setAttribute("aria-expanded","true"); }
+}
+menuBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleMenu(); });
+document.addEventListener("click", () => closeMenu());
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+
+function setMenuActive(which){
+  const items = menuPanel.querySelectorAll(".menuItem");
+  items.forEach(btn => btn.classList.remove("active"));
+  const map = { home: 0, hardware: 1 };
+  const idx = map[which];
+  if (typeof idx === "number" && items[idx]) items[idx].classList.add("active");
+}
+
+function showTab(which){
+  if (which === "hardware"){
+    tabHardware.classList.remove("hidden");
+    tabHome.classList.add("hidden");
+    setMenuActive("hardware");
+    refreshHardware();
+  } else {
+    tabHome.classList.remove("hidden");
+    tabHardware.classList.add("hidden");
+    setMenuActive("home");
+  }
+  closeMenu();
+}
+showTab("home");
+
+/* ============================
+   DISPLAY (LIVE CONTROL)
+============================ */
+function setToggle(el, on) {
+  el.classList.toggle("on", !!on);
+  el.setAttribute("aria-checked", String(!!on));
+}
+function renderDisplayToggle() {
+  setToggle(displayToggle, desiredMonitorPower);
+  displayToggleLabel.textContent = desiredMonitorPower ? "ON" : "OFF";
+
+  const fresh = lastHeartbeatMs > 0 && (Date.now() - lastHeartbeatMs) <= heartbeatFreshMs;
+  const showOn = desiredMonitorPower || (fresh && displayOn);
+  displayStateText.textContent = showOn ? "ON" : "OFF";
+  displayStateText.classList.toggle("valueOnline", showOn);
+  displayStateText.classList.toggle("valueOffline", !showOn);
+  displayStateText.classList.remove("valueWarn");
+}
+async function refreshDisplayState() {
+  try {
+    const data = await motorRequest("/state");
+    const state = data.state || data || {};
+    if (typeof state.displayOn === "boolean") displayOn = state.displayOn;
+    if (typeof state.desiredMonitorPower === "boolean") desiredMonitorPower = state.desiredMonitorPower;
+    if (typeof state.lastHeartbeatMs === "number") lastHeartbeatMs = state.lastHeartbeatMs;
+    renderDisplayToggle();
+  } catch {
+    // keep last known state
+  }
+}
+
+async function onDisplayToggle() {
+  const wantOn = !desiredMonitorPower;
+  desiredMonitorPower = wantOn;
+  renderDisplayToggle();
+  try {
+    await motorRequest(wantOn ? "/monitor_on" : "/monitor_off");
+    print(`[User] Monitor command sent: ${wantOn ? "ON" : "OFF"}`);
+  } catch {
+    print("[Error] Failed to send monitor command.");
+  } finally {
+    await refreshDisplayState();
+  }
+}
+displayToggle.addEventListener("click", onDisplayToggle);
+displayToggle.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDisplayToggle(); }
+});
+
+/* ============================
+   RULES / RESTRICTIONS (FIXED KEY NAMES)
+   Supports: commandApprove OR command_approve
+   Supports: maintenanceUntil OR time_sidul OR timeSidul
+============================ */
+function applyRestrictions() {
+  const blocked = maintenanceActive || !userCommandAllowed;
+  cmdInput.disabled = blocked;
+  startBtn.disabled = blocked;
+  stopBtn.disabled = blocked;
+
+  // user can always request pc on
+  pcOnBtn.disabled = lastKnownPcOnline;
+
+  if (maintenanceActive) maintenanceOverlay.classList.add("active");
+  else maintenanceOverlay.classList.remove("active");
+
+  rulesText.textContent = maintenanceActive ? "MAINTENANCE" : (userCommandAllowed ? "ALLOWED" : "BLOCKED");
+  rulesText.className = `cardValue ${maintenanceActive ? "valueWarn" : (userCommandAllowed ? "valueOnline" : "valueOffline")}`;
+  rulesSub.textContent = maintenanceActive
+    ? "Commands are temporarily disabled"
+    : (userCommandAllowed ? "User commands enabled" : "Admin disabled user commands");
+}
+
+async function refreshUserRules() {
+  if (refreshRulesInFlight) return;
+  refreshRulesInFlight = true;
+  try {
+    const data = await apiRequest("/rules");
+    const rules = data.rules || data || {};
+
+    const approve = (rules.commandApprove ?? rules.command_approve ?? true);
+    userCommandAllowed = approve !== false;
+
+    const timeSidul = String(rules.maintenanceUntil ?? rules.time_sidul ?? rules.timeSidul ?? "");
+    const schedule = parseScheduleTime(timeSidul);
+    const now = new Date();
+
+    if (schedule && now < schedule) {
+      maintenanceActive = true;
+      maintenanceText.textContent = `Server is under maintenance. Open after ${toLocalTimeText(timeSidul)}.`;
+    } else {
+      maintenanceActive = false;
+    }
+
+    applyRestrictions();
+  } catch {
+    // If rules endpoint fails, keep last known state but don't kill UI
+    applyRestrictions();
+  } finally {
+    refreshRulesInFlight = false;
+  }
+}
+
+/* ============================
+   STATUS (FIXED PC ONLINE LOGIC)
+   Supports: pcOnline OR pc_status OR pc?.online (safe)
+============================ */
+function applyStatus(status) {
+  const maxPlayers = Number(status.maxPlayers ?? status.max_players ?? 0);
+  const online = Number(status.onlinePlayers ?? status.online_players ?? 0);
+  const ram = Number(status.ramUsageMb ?? status.ram_usage_mb ?? 0);
+  const players = Array.isArray(status.players) ? status.players : [];
+
+  const ramMax = Number(status.ramMaxMb ?? status.ramMax ?? status.ram_max_mb ?? 8192);
+
+  // server running
+  lastKnownServerRunning = !!(status.isRunning ?? status.running ?? status.serverRunning);
+
+  // pc online (IMPORTANT FIX: don't force true)
+  lastKnownPcOnline = !!(
+    status.pcOnline ??
+    status.pc_online ??
+    status.pc_status ??
+    status.pc?.online ??
+    status.pc?.isOnline
+  );
+
+  playerCount.textContent = `${online} / ${maxPlayers || 0}`;
+  renderPlayerNames(players);
+
+  ramText.textContent = `${ram}MB / ${ramMax}MB`;
+  const pct = ramMax > 0 ? Math.min(100, Math.round((ram / ramMax) * 100)) : 0;
+  ramFill.style.width = `${pct}%`;
+
+  pcStatus.textContent = lastKnownPcOnline ? "ONLINE" : "OFFLINE";
+  serverStatus.textContent = lastKnownServerRunning ? "RUNNING" : "STOPPED";
+  setPillState(pillPc, lastKnownPcOnline ? "good" : "bad");
+  setPillState(pillServer, lastKnownServerRunning ? "good" : "bad");
+
+  pcControlText.textContent = lastKnownPcOnline ? "ONLINE" : "OFFLINE";
+  pcControlText.className = `cardValue ${lastKnownPcOnline ? "valueOnline" : "valueOffline"}`;
+  pcOnBtn.disabled = lastKnownPcOnline;
+}
+
+async function refreshStatus() {
+  if (refreshStatusInFlight) return;
+  refreshStatusInFlight = true;
+  try {
+    const data = await apiRequest("/status");
+    applyStatus(data.status || data || {});
+    await refreshDisplayState();
+    statusFailureCount = 0;
+  } catch {
+    statusFailureCount += 1;
+    if (statusFailureCount >= 3) {
+      lastKnownPcOnline = false;
+      lastKnownServerRunning = false;
+
+      pcStatus.textContent = "OFFLINE";
+      serverStatus.textContent = "UNKNOWN";
+      setPillState(pillPc, "bad");
+      setPillState(pillServer, "warn");
+
+      pcControlText.textContent = "OFFLINE";
+      pcControlText.className = "cardValue valueOffline";
+      pcOnBtn.disabled = false;
+
+      // keep restrictions consistent
+      applyRestrictions();
+    }
+  } finally {
+    refreshStatusInFlight = false;
+  }
+}
+
+/* ============================
+   CONSOLE POLL
+============================ */
+async function pollConsole() {
+  if (pollConsoleInFlight) return;
+  pollConsoleInFlight = true;
+  try {
+    const data = await apiRequest(`/console?since=${consoleOffset}`);
+    if (data && data.ok && Array.isArray(data.lines)) {
+      queueConsoleLines(data.lines.map(item => item.text || ""));
+    }
+    if (data && typeof data.next === "number") consoleOffset = data.next;
+  } catch {
+    // don't spam errors in console UI
+  } finally {
+    pollConsoleInFlight = false;
+  }
+}
+
+/* ============================
+   COMMANDS
+============================ */
+async function handleCommand(e) {
+  if (e.key !== "Enter") return;
+  let input = e.target.value.trim();
+  if (!input) return;
+  if (input.startsWith("/")) input = input.slice(1).trim();
+
+  if (maintenanceActive) { print("[Blocked] Server is under maintenance."); e.target.value = ""; return; }
+  if (!userCommandAllowed) { print("[Blocked] Admin disabled user command access."); e.target.value = ""; return; }
+
+  print(`> ${input}`);
+  e.target.value = "";
+
+  try {
+    const data = await apiRequest("/commands", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "user",
+        requestedBy: sessionStorage.getItem("username") || "user",
+        command: input
+      })
+    });
+    if (!data.ok) { print(`[Blocked] ${data.error || "Command is not allowed."}`); return; }
+    print("[Queue] Command queued.");
+  } catch (err) {
+    print("[Error] Command failed.");
+  }
+}
+function sendQuickCommand(){ handleCommand({ key: "Enter", target: cmdInput }); }
+
+async function startServer() {
+  if (maintenanceActive) { print("[Blocked] Server is under maintenance."); return; }
+  if (!userCommandAllowed) { print("[Blocked] Admin disabled user command access."); return; }
+
+  try {
+    const data = await apiRequest("/commands", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "user",
+        requestedBy: sessionStorage.getItem("username") || "user",
+        command: "start_server"
+      })
+    });
+    print(data.ok ? "[Queue] Start request queued." : `[Blocked] ${data.error || "Start not allowed."}`);
+  } catch {
+    print("[Error] Failed to contact cloud API.");
+  }
+}
+
+async function stopServer() {
+  if (maintenanceActive) { print("[Blocked] Server is under maintenance."); return; }
+  if (!userCommandAllowed) { print("[Blocked] Admin disabled user command access."); return; }
+
+  try {
+    const data = await apiRequest("/commands", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        role: "user",
+        requestedBy: sessionStorage.getItem("username") || "user",
+        command: "stop_server"
+      })
+    });
+    print(data.ok ? "[Queue] Stop request queued." : `[Blocked] ${data.error || "Stop not allowed."}`);
+  } catch {
+    print("[Error] Failed to contact cloud API.");
+  }
+}
+
+async function turnOnPc(){
+  try{
+    print("[User] Requesting PC power ON...");
+    await motorRequest("/pc_on");
+    print("[User] PC ON command sent.");
+    refreshStatus();
+  } catch {
+    print("[Error] Failed to contact Motor API for PC ON.");
+  }
+}
+
+function clearConsole() {
+  consoleBox.innerHTML = "";
+  consoleLineCount = 0;
+  print("[User] Console cleared.");
+}
+
+function logout() {
+  sessionStorage.removeItem("role");
+  sessionStorage.removeItem("username");
+  localStorage.removeItem("role");
+  localStorage.removeItem("username");
+  window.location.href = "index.html";
+}
+
+/* ============================
+   HARDWARE TAB
+============================ */
+function setBar(fillEl, pct){
+  const p = Math.max(0, Math.min(100, Number(pct || 0)));
+  if (fillEl) fillEl.style.width = `${p}%`;
+}
+
+function renderHardware(hw){
+  if (!hw) return;
+
+  const cpuName = hw.cpu?.name ?? "--";
+  const cpuPct = Number(hw.cpu?.usagePercent ?? hw.cpu?.usage ?? 0);
+  cpuNameEl.textContent = cpuName;
+  cpuUsageTextEl.textContent = `Usage: ${isFinite(cpuPct) ? Math.round(cpuPct) : 0}%`;
+  setBar(cpuFillEl, cpuPct);
+
+  const gpuName = hw.gpu?.name ?? "--";
+  const gpuPct = Number(hw.gpu?.usagePercent ?? hw.gpu?.usage ?? 0);
+  gpuNameEl.textContent = gpuName;
+  gpuUsageTextEl.textContent = `Usage: ${isFinite(gpuPct) ? Math.round(gpuPct) : 0}%`;
+  setBar(gpuFillEl, gpuPct);
+
+  const ramUsed = hw.ram?.usedMb ?? hw.ram?.used_mb;
+  const ramTotal = hw.ram?.totalMb ?? hw.ram?.total_mb;
+  const ramPct = Number(hw.ram?.usagePercent ?? (ramUsed && ramTotal ? (ramUsed/ramTotal)*100 : 0));
+  if (ramUsed != null && ramTotal != null) {
+    pcRamTextEl.textContent = `${(ramUsed/1024).toFixed(1)}GB / ${(ramTotal/1024).toFixed(1)}GB`;
+  } else pcRamTextEl.textContent = "--";
+  pcRamUsageTextEl.textContent = `Usage: ${isFinite(ramPct) ? Math.round(ramPct) : 0}%`;
+  setBar(pcRamFillEl, ramPct);
+
+  const stUsed = hw.storage?.usedGb ?? hw.storage?.used_gb;
+  const stTotal = hw.storage?.totalGb ?? hw.storage?.total_gb;
+  const stPct = Number(hw.storage?.usagePercent ?? (stUsed && stTotal ? (stUsed/stTotal)*100 : 0));
+  if (stUsed != null && stTotal != null) storageTextEl.textContent = `${Number(stUsed).toFixed(0)}GB / ${Number(stTotal).toFixed(0)}GB`;
+  else storageTextEl.textContent = "--";
+  storageUsageTextEl.textContent = `Usage: ${isFinite(stPct) ? Math.round(stPct) : 0}%`;
+  setBar(storageFillEl, stPct);
+}
+
+async function refreshHardware(){
+  if (hardwareInFlight) return;
+  hardwareInFlight = true;
+  try{
+    const data = await apiRequest("/hardware");
+    const hw = data.hardware || data.status || data;
+    lastHardware = hw;
+    renderHardware(hw);
+  } catch {
+    if (lastHardware) renderHardware(lastHardware);
+  } finally {
+    hardwareInFlight = false;
+  }
+}
+
+/* ============================
+   POLLING
+============================ */
+function startPolling() {
+  clearInterval(statusTimerId);
+  clearInterval(consoleTimerId);
+  clearInterval(rulesTimerId);
+  clearInterval(hardwareTimerId);
+
+  const isHidden = document.hidden;
+  statusTimerId = setInterval(refreshStatus, isHidden ? 5000 : 1500);
+  consoleTimerId = setInterval(pollConsole, isHidden ? 3500 : 1100);
+  rulesTimerId = setInterval(refreshUserRules, isHidden ? 12000 : 3500);
+  hardwareTimerId = setInterval(refreshHardware, isHidden ? 15000 : 5000);
+}
+
+/* INIT */
+renderDisplayToggle();
+refreshStatus();
+pollConsole();
+refreshUserRules();
+refreshHardware();
+refreshDisplayState();
+startPolling();
+
+document.addEventListener("visibilitychange", startPolling);
+window.addEventListener("focus", () => { refreshStatus(); pollConsole(); refreshUserRules(); });
+window.addEventListener("beforeunload", () => {
+  clearInterval(statusTimerId);
+  clearInterval(consoleTimerId);
+  clearInterval(rulesTimerId);
+  clearInterval(hardwareTimerId);
+});
+</script>
+
+</body>
+</html>
+
